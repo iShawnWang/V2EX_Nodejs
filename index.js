@@ -15,7 +15,7 @@ var url = require('url');
 
 var db;
 var latestCollection;
-Mongo.connect("mongodb://localhost:27017/V2EX",function(error,mongodb){
+Mongo.connect("mongodb://ishawnwang:ws19940415@ds145312.mlab.com:45312/v2ex",function(error,mongodb){
     db = mongodb;
     latestCollection = db.collection("latest");
 });
