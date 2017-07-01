@@ -198,6 +198,10 @@ function crawlingV2ExRecent(i,callback) {
     });
 }
 
+app.get("/",function (req,res) {
+   res.send("Hello V2EX ~");
+});
+
 app.listen(3000, function (req, res) {
   console.log('app is running at port 3000');
 });
