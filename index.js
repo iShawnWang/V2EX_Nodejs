@@ -69,7 +69,11 @@ function fetchTopics(page,length,callback){
 }
 
 app.get('/latest',function(req,res){
-    var page = parseInt(req.query.page) ? parseInt(req.query.page) : 0;
+    if(isEmpty(req.query.page)){
+        res.send({"status":"参数错误"});
+        return;
+    }
+    var page = parseInt(req.query.page);
     fetchTopics(page,50,function (error,docs) {
         if(error !== null){
             res.send(JSON.stringify({"status":"数据错误"}));
