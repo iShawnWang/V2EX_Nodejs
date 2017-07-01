@@ -202,7 +202,7 @@ app.get("/",function (req,res) {
    res.send("Hello V2EX ~");
 });
 
-app.listen(3000, function (req, res) {
+app.listen(process.env.PORT || 3000, function (req, res) {
   console.log('app is running at port 3000');
 });
 
