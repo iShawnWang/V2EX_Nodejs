@@ -13,6 +13,16 @@ var topic = require('./Model/Topic');
 
 var url = require('url');
 
+
+
+// https://instrumentalapp.com/
+var I = require('instrumental-agent');
+
+I.configure({
+    apiKey: '8aad8b02f5ce7bb26e6bcad2f5b49058',
+    enabled: true
+});
+
 var db;
 var latestCollection;
 Mongo.connect("mongodb://ishawnwang:ws19940415@ds145312.mlab.com:45312/v2ex",function(error,mongodb){
@@ -67,6 +77,19 @@ function fetchTopics(page,length,callback){
         });
     });
 }
+
+// 全局中间件, Measure all requests
+app.use(function (req,res,next) {
+    I.increment("requests");
+    next();
+});
+
+// 错误处理中间件
+app.use(function(err, req, res, next) {
+    I.increment("errors");
+    console.error(" 66666666666   Error Date : " + new Date());
+    res.status(500).send(JSON.stringify({"status":"Something broke!"}));
+});
 
 app.get('/latest',function(req,res){
     if(isEmpty(req.query.page)){
@@ -210,7 +233,7 @@ app.listen(process.env.PORT || 3000, function (req, res) {
   console.log('app is running at port 3000');
 });
 
-var cronJob = cron.job("0 */10 * * * *", function(){
+var cronJob = cron.job("0 */15 * * * *", function(){
 
     signin("ishawnwang@outlook.com","ws19940415",function (error,json) {
         if(!json || isEmpty(json["username"])){
