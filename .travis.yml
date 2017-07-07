@@ -1,5 +1,10 @@
 language: node_js
 node_js:
   - stable
+notifications:
+  slack:
+     rooms:
+      - ishawnwang2333:RxPONUYAfUhnnSiFmO8X2NoG#general
+#      - ishawnwang2333:RxPONUYAfUhnnSiFmO8X2NoG#random
 #services:
 #    mongodb
