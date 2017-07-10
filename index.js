@@ -11,18 +11,6 @@ var Mongo = require('mongodb').MongoClient;
 
 var topic = require('./Model/Topic');
 
-var url = require('url');
-
-
-
-// https://instrumentalapp.com/
-var I = require('instrumental-agent');
-
-I.configure({
-    apiKey: '8aad8b02f5ce7bb26e6bcad2f5b49058',
-    enabled: true
-});
-
 var db;
 var latestCollection;
 Mongo.connect("mongodb://ishawnwang:ws19940415@ds145312.mlab.com:45312/v2ex",function(error,mongodb){
@@ -80,13 +68,11 @@ function fetchTopics(page,length,callback){
 
 // 全局中间件, Measure all requests
 app.use(function (req,res,next) {
-    I.increment("requests");
     next();
 });
 
 // 错误处理中间件
 app.use(function(err, req, res, next) {
-    I.increment("errors");
     console.error(" 66666666666   Error Date : " + new Date());
     res.status(500).send(JSON.stringify({"status":"Something broke!"}));
 });
