@@ -3,16 +3,21 @@ var url = require('url');
 function Topic(){
     this.topicID;
     this.title;
-    this.author = new Author();
+    this.author = new User();
+    this.lastReplayUser = new User();
     this.url;
+    this.tag;
+    this.tagHref;
+    this.lastReplayTime;
 }
 
-function Author(){
+function User(){
     this.avatar;
+    this.userName;
 }
 
 exports.Topic = Topic;
-exports.Author = Author;
+exports.User = User;
 
 var cheerio = require('cheerio');
 
@@ -25,6 +30,22 @@ Topic.createFromHTML = function(html,cell){
     }
     var title = html('.item_title a',cell).text();
     t.title = title;
+
+
+    var userName = html('.small.fade strong',cell).first().children('a').text();
+    t.author.username = userName;
+    var tag = html('.small.fade a',cell).text();
+    t.tag = tag;
+
+    var lastReplayUserName = html('.small.fade strong',cell).first().next().text();
+    var lastReplayTime = html('.small.fade',cell).first().text().split('•')[2];
+    t.lastReplayUser.username = lastReplayUserName;
+    t.lastReplayTime = lastReplayTime;
+
+
+    var tagHref = html('.small.fade a',cell).attr('href');
+    tagHref = url.resolve("https://www.v2ex.com",tagHref);
+    t.tagHref = tagHref;
 
     var detailHref = html('.item_title a',cell).attr('href');
     detailHref = url.resolve("https://www.v2ex.com",detailHref);
