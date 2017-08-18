@@ -1,26 +1,40 @@
-var express = require('express');
-var bodyParser = require('body-parser');
-var utility = require('utility');
-var request = require('request');
-var cheerio = require('cheerio');
-var cookies = require('request-cookies');
-var cron = require('cron');
-var async = require('async');
+'use strict';
 
-var Mongo = require('mongodb').MongoClient;
+const port = process.env.PORT || 3000;
 
-var topic = require('./Model/Topic');
+const request = require('request');
+const cheerio = require('cheerio');
+const Mongo = require('mongodb').MongoClient;
+const express = require('express');
+const bodyParser = require('body-parser');
+const app = new express();
+
+app.use(bodyParser.urlencoded({ extended: false }))
 
 var db;
-var latestCollection;
-Mongo.connect("mongodb://ishawnwang:ws19940415@ds145312.mlab.com:45312/v2ex",function(error,mongodb){
+var recentCollection;
+Mongo.connect("mongodb://ishawnwang:ws19940415@ds145312.mlab.com:45312/v2ex",function(error,mongodb){ //连接 数据库
     db = mongodb;
-    latestCollection = db.collection("latest");
+    recentCollection = db.collection("Topics");
 });
 
-var app = express();
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended: false}));
+app.get("/",function (req,res) {
+    res.send("Hello V2EX ~");
+});
+
+// 全局中间件, Measure all requests
+app.use(function (req,res,next) {
+    next();
+});
+
+// 错误处理中间件
+app.use(function(err, req, res, next) {
+    res.status(500).send(JSON.stringify({"status":"Something broke!"}));
+});
+
+app.listen(process.env.PORT || 3000, function (req, res) {
+    console.log('app is running at port 3000');
+});
 
 function isEmpty(str) {
     return (!str || 0 === str.length);
@@ -42,7 +56,7 @@ function fetchTopics(page,length,callback){
 
     var firstPage = page === 0;
     var topicsPerPage = length;
-    latestCollection.find({}).limit(firstPage ? topicsPerPage :topicsPerPage * page).toArray(function(err,docs){
+    recentCollection.find({}).limit(firstPage ? topicsPerPage :topicsPerPage * page).toArray(function(err,docs){
 
         if(firstPage){
             handleCallback(callback,null,docs);
@@ -50,13 +64,13 @@ function fetchTopics(page,length,callback){
         }
 
         if(docs.length === 0){
-            handleCallback(callback,new Error('咋没数据捏'));
+            handleCallback(callback,new Error('没数据捏'));
             return;
         }
 
         //继续查分页数据
         var lastID = docs[docs.length-1]._id;
-        latestCollection.find({_id : { "$gt" : lastID } }).limit(topicsPerPage).toArray(function(err,docs){
+        recentCollection.find({_id : { "$gt" : lastID } }).limit(topicsPerPage).toArray(function(err,docs){
             if(docs.length === 0){
                 handleCallback(callback, new Error('没有更多数据了...'));
                 return;
@@ -66,18 +80,7 @@ function fetchTopics(page,length,callback){
     });
 }
 
-// 全局中间件, Measure all requests
-app.use(function (req,res,next) {
-    next();
-});
-
-// 错误处理中间件
-app.use(function(err, req, res, next) {
-    console.error(" 66666666666   Error Date : " + new Date());
-    res.status(500).send(JSON.stringify({"status":"Something broke!"}));
-});
-
-app.get('/latest',function(req,res){
+app.get('/recent',function(req,res){
     if(isEmpty(req.query.page)){
         res.send({"status":"参数错误"});
         return;
@@ -110,10 +113,33 @@ app.post("/signin",function (req,res) {
     });
 });
 
+// 登出 https://www.v2ex.com/signout?once=62472
+app.get('/signout',function (req,res) {
+    var once = req.query.once;
+    if(isEmpty(once)){
+        res.send(JSON.stringify({'status':'failed'}));
+        return;
+    }
+    request.get({url:'https://www.v2ex.com/signout?once='+ once ,jar:true},function (error,response,body) {
+        if(response.statusCode === 200){
+            res.send(JSON.stringify({'status':'success'}));
+        }
+    });
+});
+
+
+// 登录
 function signin(username,password,callback) {
+
     //1. 先 Get 获取 userNameKey 和 pwdKey
     request.get({url:"https://www.v2ex.com/signin",jar:true},function (error,response,body) {
-        const $ = cheerio.load(body.toString());
+        var bodyString = body.toString();
+        if(bodyString.indexOf('Access Denied') >= 0){
+            console.log("抓取终止 : Access Denied at :" + new Date());
+
+            return;
+        }
+        const $ = cheerio.load(bodyString);
 
         var form = {};
 
@@ -167,92 +193,3 @@ function signin(username,password,callback) {
         })
     });
 }
-
-// 登出 https://www.v2ex.com/signout?once=62472
-app.get('/signout',function (req,res) {
-    var once = req.query.once;
-    if(isEmpty(once)){
-        res.send(JSON.stringify({'status':'failed'}));
-        return;
-    }
-    request.get({url:'https://www.v2ex.com/signout?once='+ once ,jar:true},function (error,response,body) {
-        if(response.statusCode === 200){
-            res.send(JSON.stringify({'status':'success'}));
-        }
-    });
-});
-
-function crawlingV2ExRecent(i,callback) {
-    request.get({url:'https://www.v2ex.com/recent?p=' + String(i),jar:true}, function (error, response, body) {
-        const $ = cheerio.load(body.toString());
-
-        var latest = [];
-        var cells = $('.cell.item');
-        if(cells.length<=0){
-            handleCallback(callback,new Error("抓取数据错误"));
-            return;
-        }
-        cells.each(function (i, c) {
-
-            var t = topic.Topic.createFromHTML($, c);
-            if (t === null || isNaN(t.topicID)) {
-                return;
-            }
-            latest.push(t);
-            latestCollection.update({topicID: {"$eq": t.topicID}}, t, {'upsert': true}, function (error, result) {
-                if (error) {
-                    handleCallback(callback,new Error("插入数据失败"));
-                    return;
-                }
-                handleCallback(callback);
-            });
-        });
-    });
-}
-
-app.get("/",function (req,res) {
-   res.send("Hello V2EX ~");
-});
-
-app.listen(process.env.PORT || 3000, function (req, res) {
-  console.log('app is running at port 3000');
-});
-
-var cronJob = cron.job("0 */15 * * * *", function(){
-
-    signin("ishawnwang@outlook.com","ws19940415",function (error,json) {
-        if(!json || isEmpty(json["username"])){
-            console.log("登录出问题了.. 终止抓取");
-            return;
-        }
-
-        db.collection('latest').drop(function (error, response) {
-            //登录成功, 抓取每一页数据
-            var count = 0;
-            async.whilst(
-                function () { return count < 20; },
-                function (callback) {
-                    count++;
-
-                    console.log("抓取第 " + count + " 页数据~");
-                    crawlingV2ExRecent(count,function (error) {
-                        if(error){
-                            callback(error);
-                            return;
-                        }
-                        callback();
-                    });
-                },
-                function (err) {
-                    if(err){
-                        console.log("爬虫任务失败 : " + err);
-                        return;
-                    }
-                    console.log("完成一次爬虫任务");
-                }
-            );
-        });
-    });
-});
-
-cronJob.start();

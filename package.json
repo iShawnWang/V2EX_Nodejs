@@ -4,17 +4,15 @@
   "description": "V2EX Nodejs api",
   "main": "index.js",
   "dependencies": {
-    "async": "^2.5.0",
     "body-parser": "^1.17.2",
     "cheerio": "^1.0.0-rc.1",
-    "cron": "^1.2.1",
     "express": "^4.15.3",
     "mongodb": "^2.2.28",
-    "request": "^2.81.0",
-    "request-cookies": "^1.1.0",
-    "utility": "^1.12.0"
+    "request": "^2.81.0"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "babel-cli": "^6.24.1"
+  },
   "scripts": {
     "test": "node test.js",
     "start": "node index.js"
