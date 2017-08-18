@@ -1,4 +1,4 @@
-![](https://travis-ci.org/iShawnWang/V2EX_Nodejs.svg?branch=master)![][node6x] [![GitHub stars][stars]][stargazers] [![GitHub forks][forks]][network] [![GitHub issues][issues]][issues_url] [![GitHub license][license]][lic_file]
+![](https://travis-ci.org/iShawnWang/V2EX_Nodejs.svg?branch=master) ![][node6x] [![GitHub stars][stars]][stargazers] [![GitHub forks][forks]][network] [![GitHub issues][issues]][issues_url] [![GitHub license][license]][lic_file]
 
 # V2EX_Nodejs
 V2EX 最近的文章, 登录, 注销接口
@@ -46,7 +46,7 @@ V2EX_Nodejs is released under the GPL v3.0 license. See [LICENSE](https://github
 
 [node6x]:https://img.shields.io/badge/node-v6.x-brightgreen.svg
 
-[license]:https://img.shields.io/badge/license-GPL%20V3-red.svg
+[license]:https://img.shields.io/badge/license-MIT-ff69b4.svg
 
-[lic_file]:https://raw.githubusercontent.com/xiyouMc/WebHubBot/master/LICENSE
+[lic_file]:https://raw.githubusercontent.com/iShawnWang/V2EX_Nodejs/master/LICENSE
 
